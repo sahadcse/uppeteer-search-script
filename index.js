@@ -1,22 +1,35 @@
-const puppeteer = require("puppeteer");
+const puppeteer = require('puppeteer');
 
 (async () => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
-  await page.goto("https://www.google.com");
+  try {
+    await page.goto('https://www.duckduckgo.com');
 
-  await page.type('input[name="q"]', "puppeteer");
-  await page.click('input[name="btnK"]');
+    await page.waitForSelector('input[name="q"]', { timeout: 30000 });
+    console.log('Search box is visible.');
 
-  await page.waitForSelector("h3");
+    await page.type('input[name="q"]', 'automation');
 
-  const result = await page.evaluate(() => {
-    const anchors = Array.from(document.querySelectorAll("h3"));
-    return anchors.map((anchor) => anchor.textContent);
-  });
+    await page.keyboard.press('Enter');
+    console.log('Search initiated.');
 
-  console.log(result);
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+    console.log('Navigation completed.');
 
-  await browser.close();
+    await page.waitForSelector('a.result__a', { timeout: 30000 });
+    console.log('Results are visible.');
+
+    const results = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a.result__a'));
+      return anchors.map(anchor => anchor.textContent);
+    });
+
+    console.log(results);
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    await browser.close();
+  }
 })();
